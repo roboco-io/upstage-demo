@@ -62,6 +62,7 @@ streamlit run app.py
 *   [제품 요구사항 정의서 (PRD)](docs/PRD.md)
 *   [개발 태스크 (TASKS)](docs/TASKS.md)
 *   [튜토리얼 (Tutorial)](docs/Tutorial.md)
+*   [GitHub Actions 완벽 가이드](docs/github-actions-guide.md) 📘 *대학생을 위한 자동 배포 설명서*
 
 ## 🎤 프레젠테이션 (Presentation)
 

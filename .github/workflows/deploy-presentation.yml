@@ -1,58 +1,128 @@
+# ============================================
+# GitHub Actions 워크플로우: 프레젠테이션 자동 배포
+# ============================================
+# 목적: docs/presentation.md 파일을 HTML로 변환하여 GitHub Pages에 자동 배포
+# 작성일: 2025-12-23
+# ============================================
+
+# 워크플로우 이름 (GitHub Actions 탭에 표시됨)
 name: Deploy Presentation to GitHub Pages
 
+# ============================================
+# 트리거 조건: 언제 이 워크플로우를 실행할까?
+# ============================================
 on:
+  # 1. Push 이벤트 (코드를 GitHub에 푸시할 때)
   push:
     branches:
-      - main
+      - main  # main 브랜치에 푸시할 때만 실행
     paths:
-      - 'docs/presentation.md'
-      - '.github/workflows/deploy-presentation.yml'
+      # 아래 파일들이 변경되었을 때만 실행 (불필요한 빌드 방지)
+      - 'docs/presentation.md'                        # 프레젠테이션 파일
+      - '.github/workflows/deploy-presentation.yml'   # 이 워크플로우 파일 자체
+  
+  # 2. 수동 실행 (GitHub Actions 탭에서 "Run workflow" 버튼으로 실행 가능)
   workflow_dispatch:
 
+# ============================================
+# 권한 설정: 이 워크플로우가 무엇을 할 수 있는지 정의
+# ============================================
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read      # 저장소 코드를 읽을 수 있는 권한
+  pages: write        # GitHub Pages에 쓸 수 있는 권한
+  id-token: write     # OIDC 토큰 생성 권한 (Pages 배포 인증용)
 
+# ============================================
+# 동시성 제어: 여러 워크플로우가 동시에 실행되는 것을 방지
+# ============================================
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "pages"              # "pages" 그룹으로 묶음 (같은 그룹은 동시 실행 안 됨)
+  cancel-in-progress: false   # 실행 중인 워크플로우를 취소하지 않음 (안전성 우선)
 
+# ============================================
+# 작업(Jobs) 정의
+# ============================================
 jobs:
+  # ------------------------------------------
+  # Job 1: Build (프레젠테이션 빌드)
+  # ------------------------------------------
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Ubuntu Linux 최신 버전에서 실행
+    
     steps:
+      # Step 1: 코드 체크아웃 (GitHub 저장소에서 코드 다운로드)
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # GitHub 공식 체크아웃 액션 v4 사용
 
+      # Step 2: Node.js 설치 (Marp CLI는 Node.js 기반 도구)
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4  # GitHub 공식 Node.js 설정 액션 v4 사용
         with:
-          node-version: '20'
+          node-version: '20'  # Node.js 버전 20 설치
 
+      # Step 3: Marp CLI 설치 (Markdown → HTML 변환 도구)
       - name: Install Marp CLI
         run: npm install -g @marp-team/marp-cli
+        # npm: Node Package Manager
+        # -g: 전역 설치 (어디서든 사용 가능)
+        # @marp-team/marp-cli: Marp CLI 패키지
 
+      # Step 4: 프레젠테이션 빌드 (Markdown → HTML 변환)
       - name: Build presentation
         run: |
           mkdir -p docs/dist
           marp --no-stdin --html docs/presentation.md -o docs/dist/index.html
+        # mkdir -p docs/dist: 출력 디렉토리 생성 (없으면 만들기)
+        # marp: Marp CLI 실행
+        #   --no-stdin: 표준 입력 비활성화
+        #   --html: HTML 출력 활성화 (JavaScript 포함)
+        #   docs/presentation.md: 입력 파일 (Markdown)
+        #   -o docs/dist/index.html: 출력 파일 (HTML)
 
+      # Step 5: GitHub Pages 설정 (배포 환경 준비)
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        # GitHub Pages 설정 확인 및 메타데이터 생성
 
+      # Step 6: 아티팩트 업로드 (빌드 결과물을 다음 Job에 전달)
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'docs/dist'
+          path: 'docs/dist'  # docs/dist 폴더의 모든 파일을 업로드
+        # 아티팩트: Job 간에 파일을 전달하는 메커니즘
 
+  # ------------------------------------------
+  # Job 2: Deploy (GitHub Pages에 배포)
+  # ------------------------------------------
   deploy:
+    # 배포 환경 설정
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
+      name: github-pages  # 환경 이름
+      url: ${{ steps.deployment.outputs.page_url }}  # 배포 후 접속 URL
+    
+    runs-on: ubuntu-latest  # Ubuntu Linux 최신 버전에서 실행
+    needs: build            # build Job이 성공적으로 완료된 후에만 실행
+    
     steps:
+      # Step 1: GitHub Pages에 배포
       - name: Deploy to GitHub Pages
-        id: deployment
+        id: deployment  # 이 Step에 'deployment'라는 ID 부여 (출력값 참조용)
         uses: actions/deploy-pages@v4
+        # 이전에 업로드한 아티팩트를 GitHub Pages에 배포
+        # 배포 완료 후 page_url 출력 (위의 environment.url에서 사용)
+
+# ============================================
+# 워크플로우 실행 흐름 요약
+# ============================================
+# 1. 트리거: presentation.md 푸시 또는 수동 실행
+# 2. Build Job 시작
+#    - 코드 체크아웃
+#    - Node.js 설치
+#    - Marp CLI 설치
+#    - Markdown → HTML 변환
+#    - 아티팩트 업로드
+# 3. Deploy Job 시작 (Build 성공 시)
+#    - 아티팩트 다운로드
+#    - GitHub Pages에 배포
+# 4. 완료: https://roboco.io/upstage-demo/ 에서 확인 가능!
+# ============================================
