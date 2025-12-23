@@ -63,5 +63,25 @@ streamlit run app.py
 *   [개발 태스크 (TASKS)](docs/TASKS.md)
 *   [튜토리얼 (Tutorial)](docs/Tutorial.md)
 
+## 🎤 프레젠테이션 (Presentation)
+
+프로젝트 소개 프레젠테이션을 GitHub Pages에서 확인할 수 있습니다:
+
+**🔗 [프레젠테이션 보기](https://roboco-io.github.io/upstage-demo/)**
+
+### 로컬에서 프레젠테이션 보기
+
+```bash
+# Marp CLI 설치 (한 번만 실행)
+npm install -g @marp-team/marp-cli
+
+# HTML로 변환
+marp --no-stdin --html docs/presentation.md -o docs/dist/index.html
+
+# 브라우저로 열기
+open docs/dist/index.html  # Mac
+# start docs/dist/index.html  # Windows
+```
+
 ---
 Developed by **Roboco IO**
