@@ -72,6 +72,9 @@ jobs:
         run: |
           mkdir -p docs/dist
           marp --no-stdin --html docs/presentation.md -o docs/dist/index.html
+          # Google Analytics 4 (gtag.js)를 빌드된 HTML의 <head>에 주입
+          perl -0pi -e 's#</head>#<script async src="https://www.googletagmanager.com/gtag/js?id=G-9G1SGM9SZQ"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-9G1SGM9SZQ");</script></head>#' docs/dist/index.html
+          grep -q G-9G1SGM9SZQ docs/dist/index.html
         # mkdir -p docs/dist: 출력 디렉토리 생성 (없으면 만들기)
         # marp: Marp CLI 실행
         #   --no-stdin: 표준 입력 비활성화
